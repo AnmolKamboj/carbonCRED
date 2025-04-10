@@ -1,0 +1,68 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Log Travel{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow">
+    <h2 class="text-2xl font-bold mb-4">Log Your Sustainable Travel</h2>
+    
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Date</label>
+            <input type="date" name="date" required 
+                   class="w-full px-3 py-2 border rounded">
+        </div>
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Transport Mode</label>
+            <select name="mode" class="w-full px-3 py-2 border rounded">
+                <option value="public_transport">Public Transport</option>
+                <option value="carpool">Carpool</option>
+                <option value="bicycle">Bicycle</option>
+                <option value="wfh">Work From Home</option>
+            </select>
+        </div>
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Miles Saved</label>
+            <input type="number" name="miles" step="0.1" required
+                   class="w-full px-3 py-2 border rounded">
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Upload Image (required)</label>
+            <label class="w-full flex items-center px-4 py-2 bg-gray-800 text-white rounded-lg shadow cursor-pointer hover:bg-gray-900 transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M4 12l1.5-1.5a2 2 0 012.828 0L12 15l2.672-2.672a2 2 0 012.828 0L20 12M12 4v4"></path>
+                </svg>
+                <span>Choose Image</span>
+                <input type="file" name="image" accept="image/*" class="hidden" required>
+            </label>
+            <p id="image-warning" class="text-red-500 text-sm mt-2 hidden">
+                Please upload an image before submitting.
+            </p>
+        </div>
+        
+        <button type="submit" 
+                class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition">
+            Submit Log
+        </button>
+    </form>
+</div>
+
+<script>
+    document.querySelector("form").addEventListener("submit", function (e) {
+        const fileInput = document.querySelector('input[type="file"]');
+        const warning = document.getElementById("image-warning");
+
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            warning.classList.remove("hidden");
+        } else {
+            warning.classList.add("hidden");
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="mb-4 p-3 rounded-md 
+                   {% if category == 'error' %}bg-red-100 text-red-800
+                   {% else %}bg-green-100 text-green-800{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <h2 class="text-2xl font-bold text-center mb-6">Register</h2>
+  
+  <form method="POST" action="{{ url_for('register') }}" class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium mb-1">Username</label>
+      <input type="text" name="username" required
+             class="w-full px-3 py-2 border rounded-md">
+    </div>
+    
+    <div>
+      <label class="block text-sm font-medium mb-1">Password</label>
+      <input type="password" name="password" required
+             class="w-full px-3 py-2 border rounded-md">
+    </div>
+    
+    <div>
+      <label class="block text-sm font-medium mb-1">Role</label>
+      <select name="role" required class="w-full px-3 py-2 border rounded-md">
+        <option value="employee">Employee</option>
+        <option value="employer">Employer</option>
+      </select>
+    </div>
+    
+    <button type="submit"
+            class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
+      Register
+    </button>
+  </form>
+  
+  <div class="mt-4 text-center">
+    <a href="{{ url_for('login') }}" class="text-sm text-green-600 hover:underline">
+      Already have an account? Login
+    </a>
+  </div>
+</div>
+{% endblock %}

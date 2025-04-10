@@ -1,0 +1,28 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Manage Employees{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
+    <h2 class="text-2xl font-bold mb-6">Manage Employees</h2>
+    
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Saved Miles</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Credits</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for employee in employees %}
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap">{{ employee.username }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ employee.saved_miles }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ employee.saved_miles * 0.06 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
