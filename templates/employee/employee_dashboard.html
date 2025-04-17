@@ -1,0 +1,31 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Employee Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- Reuse the progress bar from travel_log.html -->
+  {% include "employee/travel_log.html" with context %}
+
+  <!-- Add credits table (new) -->
+  <table class="credits-table">
+    <tr>
+      <th>Date</th>
+      <th>Transport</th> 
+      <th>Miles</th>
+      <th>Credits</th>
+    </tr>
+    {% for log in travel_logs %}
+    <tr>
+      <td>{{ log.date }}</td>
+      <td>{{ log.mode }}</td>
+      <td>{{ log.miles }}</td>
+      <td>{{ log.credits_earned }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<!-- Reuse JS from travel_log.html -->
+<script src="{{ url_for('static', filename='js/progress.js') }}"></script>
+{% endblock %}

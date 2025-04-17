@@ -1,8 +1,24 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, abort
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime  # For date handling
+from flask import jsonify     # For API responses
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
-app.secret_key = 'dev'  # Required for flash messages and sessions
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-fallback-key")
+
+# Database configuration
+if os.environ.get("DATABASE_URL"):  # Production
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"].replace("postgres://", "postgresql://")
+else:  # Development
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
 # Mock database
 users = {
@@ -13,6 +29,31 @@ users = {
 # Flask-Login setup
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# Credit calculation rates
+CREDIT_RATES = {
+    'car': 0,          # Baseline (no credits)
+    'carpool': 0.5,    # 0.5 credits/mile
+    'bus': 0.7,        # 0.7 credits/mile  
+    'bike': 1.0,       # 1.0 credits/mile
+    'wfh': 1.5         # 1.5 credits/mile (saved commute)
+}
+
+def calculate_credits(mode, miles):
+    return CREDIT_RATES.get(mode, 0) * miles
+
+
+class TravelLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    credits_earned = db.Column(db.Float, default=0)
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, nullable=False)
+    password = db.Column(db.String(128), nullable=False)
+    role = db.Column(db.String(64), nullable=False)
+    saved_miles = db.Column(db.Float, default=0)
 
 class User(UserMixin):
     pass
@@ -64,13 +105,13 @@ def dashboard():
 @app.route('/employee/dashboard')
 @login_required
 def employee_dashboard():
-    if current_user.role != 'employee':
-        abort(403)
-    return render_template('employee/dashboard.html',
-        saved_miles=750,  # Mock data
-        earned_credits=45,
-        recent_logs=[]
-    )
+    try:
+        logs = TravelLog.query.filter_by(employee_id=current_user.id).all()
+        total_credits = sum(log.credits_earned for log in logs)
+        return render_template("employee_dashboard.html", logs=logs, total_credits=total_credits)
+    except Exception as e:
+        flash("Error: {}".format(e), "error")
+        return redirect(url_for("home"))
 
 @app.route('/employer/dashboard')
 @login_required
@@ -82,11 +123,12 @@ def employer_dashboard():
 @app.route('/employer/manage-employees')
 @login_required
 def manage_employees():
-    if current_user.role != 'employer':
-        abort(403)
-    return render_template('employer/manage_employees.html',
-        employees=get_employees()  
-    )
+    try:
+        employees = User.query.filter_by(role="employee").all()
+        return render_template("manage_employees.html", employees=employees)
+    except Exception as e:
+        flash("Error: {}".format(e), "error")
+        return redirect(url_for("home"))
 
 @app.route('/logout')
 @login_required
@@ -149,6 +191,26 @@ def travel_log():
     
     return render_template('employee/travel_log.html')
 
+@app.route('/log-trip', methods=['POST'])
+@login_required 
+def log_trip():
+    data = request.get_json()  # Updated method
+    miles = float(data['miles'])
+    mode = data['mode']
+    
+    credits = calculate_credits(mode, miles)
+    
+    new_log = TravelLog(
+        employee_id=current_user.id,
+        date=datetime.utcnow().date(),
+        mode=mode,
+        miles=miles,
+        credits_earned=credits
+    )
+    db.session.add(new_log)
+    db.session.commit()
+    
+    return jsonify({"credits": credits})
 
 if __name__ == '__main__':
     app.run(debug=True)

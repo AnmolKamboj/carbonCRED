@@ -1,0 +1,7 @@
+instance/
+*.pyc
+__pycache__/
+.env
+*.db
+*.sqlite
+Pre-Credentials.txt
