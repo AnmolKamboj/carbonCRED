@@ -1,24 +1,39 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, abort
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime  # For date handling
-from flask import jsonify     # For API responses
+from datetime import datetime
+from flask import jsonify
 import os
-from dotenv import load_dotenv
+from google.cloud.sql.connector import Connector, IPTypes
+import sqlalchemy
 
-load_dotenv()  # Load environment variables from .env file
-
+# Initialize Flask app first
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-fallback-key")
 
-# Database configuration
-if os.environ.get("DATABASE_URL"):  # Production
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"].replace("postgres://", "postgresql://")
-else:  # Development
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+# Database configuration - REPLACE LINES 14-52 WITH THIS
+def init_connection():
+    connector = Connector()
+    
+    def getconn():
+        return connector.connect(
+            os.environ["INSTANCE_CONNECTION_NAME"],
+            "pg8000",
+            user=os.environ["DB_USER"],
+            password=os.environ["DB_PASS"],
+            db=os.environ["DB_NAME"],
+            ip_type=IPTypes.PUBLIC
+        )
+    
+    return getconn
 
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://"
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "creator": init_connection(),
+    "pool_recycle": 300  # Recycle connections every 5 minutes
+}
+
+db = SQLAlchemy(app)  # Initialize normally without engine parameter
 
 # Mock database
 users = {
@@ -32,21 +47,23 @@ login_manager.login_view = 'login'
 
 # Credit calculation rates
 CREDIT_RATES = {
-    'car': 0,          # Baseline (no credits)
-    'carpool': 0.5,    # 0.5 credits/mile
-    'bus': 0.7,        # 0.7 credits/mile  
-    'bike': 1.0,       # 1.0 credits/mile
-    'wfh': 1.5         # 1.5 credits/mile (saved commute)
+    'car': 0,
+    'carpool': 0.5,
+    'bus': 0.7,
+    'bike': 1.0,
+    'wfh': 1.5
 }
 
 def calculate_credits(mode, miles):
     return CREDIT_RATES.get(mode, 0) * miles
 
-
 class TravelLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    credits_earned = db.Column(db.Float, default=0)
+    date = db.Column(db.Date)
+    mode = db.Column(db.String(64))
+    miles = db.Column(db.Float)
+    credits_earned = db.Column(db.Float)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,16 +71,6 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(64), nullable=False)
     saved_miles = db.Column(db.Float, default=0)
-
-class User(UserMixin):
-    pass
-
-def get_employees():
-    """Mock data - replace with real database query"""
-    return [
-        {"username": "employee1", "saved_miles": 750},
-        {"username": "employee2", "saved_miles": 420}
-    ]
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -97,7 +104,6 @@ def login():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    """Route that redirects to role-specific dashboard"""
     if current_user.role == 'employee':
         return redirect(url_for('employee_dashboard'))
     return redirect(url_for('employer_dashboard'))
@@ -143,21 +149,19 @@ def marketplace():
     if current_user.role != 'employer':
         abort(403)
     
-    # Mock data - replace with real database queries
     credits_for_sale = [
         {"seller": "EcoCorp", "credits": 1500, "price_per_credit": 2.50},
         {"seller": "GreenTech", "credits": 800, "price_per_credit": 3.00}
     ]
     
-    return render_template('employer/marketplace.html', 
-                         credits_for_sale=credits_for_sale)
+    return render_template('employer/marketplace.html', credits_for_sale=credits_for_sale)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        role = request.form.get('role')  # 'employee' or 'employer'
+        role = request.form.get('role')
         
         if username in users:
             flash('Username already exists', 'error')
@@ -172,20 +176,17 @@ def register():
     
     return render_template('auth/register.html')
 
-
 @app.route('/employee/travel-log', methods=['GET', 'POST'])
 @login_required
 def travel_log():
     if current_user.role != 'employee':
-        abort(403)  # Only employees can access
+        abort(403)
     
     if request.method == 'POST':
-        # Process form submission
         date = request.form.get('date')
         mode = request.form.get('mode')
         miles = float(request.form.get('miles'))
         
-        # Add to database (or mock storage)
         flash('Travel logged successfully!', 'success')
         return redirect(url_for('travel_log'))
     
@@ -194,7 +195,7 @@ def travel_log():
 @app.route('/log-trip', methods=['POST'])
 @login_required 
 def log_trip():
-    data = request.get_json()  # Updated method
+    data = request.get_json()
     miles = float(data['miles'])
     mode = data['mode']
     
