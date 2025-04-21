@@ -46,6 +46,11 @@ def create_app():
     
     # Register blueprints or routes
     register_routes(app, users, CREDIT_RATES)
+
+    @app.before_first_request
+    def init_db():
+        with app.app_context():
+            db.create_all()
     
     return app
 
