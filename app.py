@@ -47,15 +47,8 @@ def create_app():
     # Register blueprints or routes
     register_routes(app, users, CREDIT_RATES)
 
-    @app.before_first_request
-    def initialize_once():
-        if not hasattr(app, 'initialized'):
-            db.create_all()
-            # Add other initialization logic here
-            app.initialized = True
-
     with app.app_context():
-        initialize_once()
+        db.create_all()  # Initialize database tables
     
     return app
 
