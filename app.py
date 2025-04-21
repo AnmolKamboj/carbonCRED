@@ -48,9 +48,14 @@ def create_app():
     register_routes(app, users, CREDIT_RATES)
 
     @app.before_first_request
-    def init_db():
-        with app.app_context():
+    def initialize_once():
+        if not hasattr(app, 'initialized'):
             db.create_all()
+            # Add other initialization logic here
+            app.initialized = True
+
+    with app.app_context():
+        initialize_once()
     
     return app
 
