@@ -13,13 +13,14 @@ from extensions import (
     login_required
 )
 from models import User, TravelLog
+from werkzeug.security import check_password_hash
 
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-fallback-key")
     
     # Database configuration
-    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCred@123@34.59.6.90:5432/carbon_credits"
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "creator": init_connection(),
         "pool_recycle": 300
@@ -56,12 +57,7 @@ def register_routes(app, users, CREDIT_RATES):
     # Flask-Login setup
     @login_manager.user_loader
     def load_user(user_id):
-        if user_id not in users:
-            return None
-        user = User()
-        user.id = user_id
-        user.role = users[user_id]["role"]
-        return user
+        return User.query.get(int(user_id))
     
     def calculate_credits(mode, miles):
         return CREDIT_RATES.get(mode, 0) * miles
@@ -76,13 +72,13 @@ def register_routes(app, users, CREDIT_RATES):
         if request.method == 'POST':
             username = request.form.get('username')
             password = request.form.get('password')
-            
-            if username in users and password == users[username]["password"]:
-                user = User()
-                user.id = username
-                login_user(user)
-                flash('Login successful!', 'success')
-                return redirect(url_for('dashboard'))
+
+            user = User.query.filter_by(username=username).first()
+            if user and check_password_hash(user.password, password):
+               login_user(user)
+               flash('Login successful!', 'success')
+               return redirect(url_for('dashboard'))
+
             flash('Invalid username or password', 'error')
         return render_template('auth/login.html')
     

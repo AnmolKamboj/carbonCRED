@@ -1,8 +1,11 @@
-# extensions.py
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 from google.cloud.sql.connector import Connector, IPTypes
+from dotenv import load_dotenv
 import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -12,6 +15,7 @@ __all__ = ['db', 'login_manager', 'current_user', 'login_user', 'logout_user', '
 
 def init_connection():
     connector = Connector()
+
     def getconn():
         return connector.connect(
             os.environ["INSTANCE_CONNECTION_NAME"],
@@ -21,4 +25,5 @@ def init_connection():
             db=os.environ["DB_NAME"],
             ip_type=IPTypes.PUBLIC
         )
+
     return getconn
