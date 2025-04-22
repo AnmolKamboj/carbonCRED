@@ -6,7 +6,7 @@ class Employee(db.Model):
     __tablename__ = 'employees'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-    employer_id = db.Column(db.Integer, db.ForeignKey('employers.id'))
+    employer_id = db.Column(db.Integer) 
     # Add relationship if needed
     # employer = db.relationship('Employer', backref='employees')
 
@@ -25,6 +25,6 @@ class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
-    password = db.Column(db.String(128), nullable=False)
+    password = db.Column(db.Text, nullable=False)  # ⚡ should be Text now
     role = db.Column(db.String(64), nullable=False)
     saved_miles = db.Column(db.Float, default=0)

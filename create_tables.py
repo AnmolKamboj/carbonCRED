@@ -4,10 +4,13 @@ from models import User, TravelLog
 from werkzeug.security import generate_password_hash
 
 app = create_app()
+
 with app.app_context():
-    db.create_all()
-    
-    # Add mock users if they don't exist
+    db.drop_all()   # ✅ Important for development: drop old tables
+    db.create_all() # ✅ Recreate tables freshly
+    print("✔ Tables dropped and created successfully!")
+
+    # Then insert your mock users
     if not User.query.filter_by(username="employee1").first():
         user1 = User(
             username="employee1",
@@ -26,4 +29,4 @@ with app.app_context():
         db.session.add(user2)
 
     db.session.commit()
-    print("✔ Tables and users created successfully!")
+    print("✔ Mock users created successfully!")

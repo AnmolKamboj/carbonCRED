@@ -20,12 +20,8 @@ def create_app():
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-fallback-key")
     
     # Database configuration
-    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCred@123@34.59.6.90:5432/carbon_credits"
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "creator": init_connection(),
-        "pool_recycle": 300
-    }
-    
+    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCred%40123@34.59.6.90:5432/carbon_credits"
+
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
