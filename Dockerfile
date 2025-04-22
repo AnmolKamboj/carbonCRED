@@ -33,4 +33,4 @@ COPY . .
 EXPOSE 8080
 
 # ✅ Start Gunicorn with factory
-CMD ["gunicorn", "--bind", ":8080", "--workers", "1", "--threads", "8", "--timeout", "0", "app:create_app()"]
+CMD ["gunicorn", "--bind", ":8080", "--workers", "1", "--threads", "8", "--timeout", "0", "app:create_app"]
