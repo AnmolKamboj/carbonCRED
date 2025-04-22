@@ -16,16 +16,18 @@ from models import User, TravelLog
 from werkzeug.security import check_password_hash
 
 def create_app():
+    print("🚀 Starting create_app()")
     app = Flask(__name__)
+    print("✅ Flask app created")
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-fallback-key")
     
     # Database configuration
     app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCred%40123@34.59.6.90:5432/carbon_credits"
-
+    print("✅ Database URI loaded")
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
-    
+    print("✅ Extensions initialized")
     # Mock database (could move to a separate file)
     users = {
         "employee1": {"password": "pass123", "role": "employee", "saved_miles": 750},
@@ -43,6 +45,7 @@ def create_app():
     
     # Register blueprints or routes
     register_routes(app, users, CREDIT_RATES)
+    print("✅ App setup complete")
 
     with app.app_context():
         db.create_all()  # Initialize database tables
@@ -210,6 +213,4 @@ def register_routes(app, users, CREDIT_RATES):
 app = create_app()
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Create tables if they don't exist
     app.run(debug=True)
