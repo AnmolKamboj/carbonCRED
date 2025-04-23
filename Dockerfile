@@ -19,18 +19,15 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first
+# Copy requirements and install
 COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Install dependencies
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Copy rest of app
+# Copy app code
 COPY . .
 
 # Expose port
 EXPOSE 8080
 
-# ✅ Start Gunicorn with factory
+# Start app with Gunicorn
 CMD ["gunicorn", "--bind", ":8080", "wsgi:app"]
