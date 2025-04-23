@@ -1,9 +1,9 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, abort
-from datetime import datetime
-from flask import jsonify
-import os
-from werkzeug.security import generate_password_hash
-from extensions import (
+#from datetime import datetime
+#from flask import jsonify
+#import os
+#from werkzeug.security import generate_password_hash
+'''from extensions import (
     db, 
     login_manager, 
     init_connection,
@@ -11,9 +11,9 @@ from extensions import (
     login_user,
     logout_user,
     login_required
-)
-from models import User, TravelLog
-from werkzeug.security import check_password_hash
+)'''
+#from models import User, TravelLog
+#from werkzeug.security import check_password_hash
 
 def create_app():
 
