@@ -101,10 +101,16 @@ def register_routes(app, users, CREDIT_RATES):
         try:
             logs = TravelLog.query.filter_by(employee_id=current_user.id).all()
             total_credits = sum(log.credits_earned for log in logs)
-            return render_template("employee_dashboard.html", logs=logs, total_credits=total_credits)
+            return render_template(
+            "employee/dashboard.html", 
+            logs=logs,
+            total_credits=total_credits,
+            saved_miles=current_user.saved_miles
+        )
         except Exception as e:
             flash("Error: {}".format(e), "error")
             return redirect(url_for("home"))
+
 
     @app.route('/employer/dashboard')
     @login_required
@@ -118,7 +124,7 @@ def register_routes(app, users, CREDIT_RATES):
     def manage_employees():
         try:
             employees = User.query.filter_by(role="employee").all()
-            return render_template("manage_employees.html", employees=employees)
+            return render_template("employer/manage_employees.html", employees=employees)
         except Exception as e:
             flash("Error: {}".format(e), "error")
             return redirect(url_for("home"))
