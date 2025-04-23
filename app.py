@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 def create_app():
     # ✅ Lazy import everything that needs Flask config or env vars
-    '''from extensions import (
+    from extensions import (
         db, 
         login_manager, 
         init_connection,
@@ -14,7 +14,7 @@ def create_app():
         logout_user,
         login_required
     )
-    from models import User, TravelLog'''
+    from models import User, TravelLog
 
     app = Flask(__name__)
     print("✅ Flask app created")
@@ -25,18 +25,18 @@ def create_app():
     print("✅ Database URI loaded")
 
     # ✅ Initialize extensions
-    #db.init_app(app)
-    #login_manager.init_app(app)
+    db.init_app(app)
+    login_manager.init_app(app)
     print("✅ Extensions initialized")
 
     # ✅ Register all routes
-    #register_routes(app, db, login_manager, User, TravelLog)
+    register_routes(app, db, login_manager, User, TravelLog)
     print("✅ Routes registered")
 
     # ✅ Create tables
-    '''with app.app_context():
+    with app.app_context():
         db.create_all()
-        print("✅ Database tables created")'''
+        print("✅ Database tables created")
 
     return app
 
