@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, abort
 #from datetime import datetime
 #from flask import jsonify
-#import os
+import os
 #from werkzeug.security import generate_password_hash
 '''from extensions import (
     db, 
@@ -19,10 +19,10 @@ def create_app():
 
     app = Flask(__name__)
 
-    #app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-fallback-key")
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-fallback-key")
     
     # Database configuration
-    #app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCred%40123@34.59.6.90:5432/carbon_credits"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCred%40123@34.59.6.90:5432/carbon_credits"
 
     # Initialize extensions
     #db.init_app(app)
