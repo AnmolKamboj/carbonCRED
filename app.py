@@ -12,7 +12,7 @@ from werkzeug.security import generate_password_hash
     logout_user,
     login_required
 )'''
-from models import User, TravelLog
+#from models import User, TravelLog
 from werkzeug.security import check_password_hash
 
 def create_app():
