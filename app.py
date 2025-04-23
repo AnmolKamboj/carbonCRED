@@ -62,6 +62,16 @@ def register_routes(app, db, login_manager, User, TravelLog):
     @app.route('/')
     def home():
         return redirect(url_for('login'))
+    
+    @app.route('/test')
+    def test():
+        return "✅ Flask is alive"
+    
+    @app.route('/debug-routes')
+    def debug_routes():
+        return jsonify([str(rule) for rule in app.url_map.iter_rules()])
+
+
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
