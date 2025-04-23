@@ -1,19 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
-from google.cloud.sql.connector import Connector, IPTypes
-from dotenv import load_dotenv
-import os
-
-# Load environment variables from .env file
-load_dotenv()
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 
-# Export all needed Flask-Login components
 __all__ = ['db', 'login_manager', 'current_user', 'login_user', 'logout_user', 'login_required']
 
 def init_connection():
+    from google.cloud.sql.connector import Connector, IPTypes
+    import os
+
     connector = Connector()
 
     def getconn():
@@ -25,5 +21,5 @@ def init_connection():
             db=os.environ["DB_NAME"],
             ip_type=IPTypes.PUBLIC
         )
-
+    
     return getconn

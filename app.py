@@ -3,19 +3,19 @@ from datetime import datetime
 from flask import jsonify
 import os
 from werkzeug.security import generate_password_hash
-'''from extensions import (
-    db, 
-    login_manager, 
-    init_connection,
-    current_user,
-    login_user,
-    logout_user,
-    login_required
-)'''
-#from models import User, TravelLog
 from werkzeug.security import check_password_hash
 
 def create_app():
+    from extensions import (
+        db, 
+        login_manager, 
+        init_connection,
+        current_user,
+        login_user,
+        logout_user,
+        login_required
+    )
+    from models import User, TravelLog
 
     app = Flask(__name__)
 
