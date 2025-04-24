@@ -1,30 +1,19 @@
-# models.py
 from extensions import db
 from flask_login import UserMixin
 
-class Employee(db.Model):
-    __tablename__ = 'employees'
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    employer_id = db.Column(db.Integer) 
-    # Add relationship if needed
-    # employer = db.relationship('Employer', backref='employees')
+    username = db.Column(db.String(64), unique=True, nullable=False)
+    password = db.Column(db.Text, nullable=False)
+    role = db.Column(db.String(64), nullable=False)
+    saved_miles = db.Column(db.Float, default=0)
 
 class TravelLog(db.Model):
-    __tablename__ = 'travel_logs'
+    __tablename__ = "travel_logs"
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'))
+    employee_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     date = db.Column(db.Date)
     mode = db.Column(db.String(50))
     miles = db.Column(db.Float)
     credits_earned = db.Column(db.Float)
-    # Add relationship
-    # employee = db.relationship('Employee', backref='travel_logs')
-
-class User(UserMixin, db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    password = db.Column(db.Text, nullable=False)  # ⚡ should be Text now
-    role = db.Column(db.String(64), nullable=False)
-    saved_miles = db.Column(db.Float, default=0)

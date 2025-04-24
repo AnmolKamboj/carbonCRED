@@ -1,49 +1,30 @@
-from flask import Flask, render_template, redirect, url_for, request, flash, abort, jsonify
-from datetime import datetime
-import os
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask
+from extensions import db, login_manager
+from models import User, TravelLog
 
 def create_app():
-    # ✅ Lazy import everything that needs Flask config or env vars
-    '''from extensions import (
-        db, 
-        login_manager, 
-        init_connection,
-        current_user,
-        login_user,
-        logout_user,
-        login_required
-    )
-    from models import User, TravelLog'''
-
     app = Flask(__name__)
-    print("✅ Flask app created")
+    app.config["SECRET_KEY"] = "013eef93b518082e667c7578a0220857973d3374123bd5043ceb8a3334c160d5"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCred%40123@34.59.6.90:5432/carbon_credits"  # or your real DB
 
-    # ✅ Configuration
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-fallback-key")
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-    print("✅ Database URI loaded")
-
-    # ✅ Initialize extensions
-    '''db.init_app(app)
+    db.init_app(app)
     login_manager.init_app(app)
-    print("✅ Extensions initialized")
 
-    # ✅ Register all routes
-    register_routes(app, db, login_manager, User, TravelLog)
-    print("✅ Routes registered")
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
 
-    # ✅ Create tables
+    @app.route('/')
+    def index():
+        return "✅ App is working with models + extensions!"
+
     with app.app_context():
         db.create_all()
-        print("✅ Database tables created")'''
-    @app.route("/")
-    def home():
-        return render_template("index.html")
 
     return app
 
-def register_routes(app, db, login_manager, User, TravelLog):
+
+'''def register_routes(app, db, login_manager, User, TravelLog):
     from extensions import current_user, login_user, logout_user, login_required
 
     # Credit calculation rates
@@ -219,4 +200,4 @@ def register_routes(app, db, login_manager, User, TravelLog):
 
     @app.context_processor
     def inject_user():
-        return dict(user=current_user)
+        return dict(user=current_user)'''
