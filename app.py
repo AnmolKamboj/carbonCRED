@@ -21,6 +21,11 @@ def create_app():
         login_manager.init_app(app)
         print("✅ Extensions initialized")
 
+        users = {
+        "employee1": {"password": "pass123", "role": "employee", "saved_miles": 750},
+        "employer1": {"password": "pass123", "role": "employer"}
+        }
+
         @login_manager.user_loader
         def load_user(user_id):
             return User.query.get(int(user_id))
@@ -187,7 +192,13 @@ def create_app():
                 flash('Travel logged successfully!', 'success')
                 return redirect(url_for('travel_log'))
             
-            return render_template('employee/travel_log.html')        
+            return render_template('employee/travel_log.html')    
+
+        @app.route('/debug-users')
+        def debug_users():
+            users = User.query.all()
+            return jsonify([{"id": u.id, "username": u.username, "role": u.role} for u in users])
+
 
         with app.app_context():
             db.create_all()

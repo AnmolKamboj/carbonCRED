@@ -2,31 +2,34 @@ from app import create_app
 from extensions import db
 from models import User, TravelLog
 from werkzeug.security import generate_password_hash
+from datetime import datetime
 
 app = create_app()
 
 with app.app_context():
-    db.drop_all()   # ✅ Important for development: drop old tables
-    db.create_all() # ✅ Recreate tables freshly
-    print("✔ Tables dropped and created successfully!")
+    db.drop_all()
+    db.create_all()
+    print("✔ Tables dropped and recreated")
 
-    # Then insert your mock users
-    if not User.query.filter_by(username="employee1").first():
-        user1 = User(
-            username="employee1",
-            password=generate_password_hash("pass123"),
-            role="employee",
-            saved_miles=750
-        )
-        db.session.add(user1)
-
-    if not User.query.filter_by(username="employer1").first():
-        user2 = User(
-            username="employer1",
-            password=generate_password_hash("pass123"),
-            role="employer"
-        )
-        db.session.add(user2)
-
+    employee = User(
+        username="employee1",
+        password=generate_password_hash("pass123"),
+        role="employee",
+        saved_miles=300
+    )
+    employer = User(
+        username="employer1",
+        password=generate_password_hash("pass123"),
+        role="employer"
+    )
+    db.session.add_all([employee, employer])
     db.session.commit()
-    print("✔ Mock users created successfully!")
+
+    logs = [
+        TravelLog(employee_id=employee.id, date=datetime(2024, 4, 1), mode="carpool", miles=10, credits_earned=5),
+        TravelLog(employee_id=employee.id, date=datetime(2024, 4, 2), mode="bike", miles=5, credits_earned=5),
+        TravelLog(employee_id=employee.id, date=datetime(2024, 4, 3), mode="wfh", miles=0, credits_earned=0)
+    ]
+    db.session.add_all(logs)
+    db.session.commit()
+    print("✔ Mock data inserted")
