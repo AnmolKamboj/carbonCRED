@@ -1,3 +1,11 @@
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+
+# ✅ Flask extensions
+db = SQLAlchemy()
+login_manager = LoginManager()
+
+# ✅ Cloud SQL Proxy connector
 from google.cloud.sql.connector import Connector, IPTypes
 import os
 
@@ -11,7 +19,7 @@ def init_connection():
             user=os.environ["DB_USER"],
             password=os.environ["DB_PASS"],
             db=os.environ["DB_NAME"],
-            ip_type=IPTypes.PUBLIC  # or IPTypes.PRIVATE if using private networking
+            ip_type=IPTypes.PUBLIC
         )
 
     return getconn
