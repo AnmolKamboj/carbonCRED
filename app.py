@@ -25,8 +25,8 @@ def create_app():
             return User.query.get(int(user_id))
 
         @app.route("/")
-        def index():
-            return "✅ App running!"
+        def home():
+            return redirect(url_for('login'))
 
         @app.route('/login', methods=['GET', 'POST'])
         def login():
