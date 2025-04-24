@@ -30,19 +30,24 @@ def create_app():
 
         @app.route('/login', methods=['GET', 'POST'])
         def login():
-            if request.method == 'POST':
-                username = request.form.get('username')
-                password = request.form.get('password')
+            try:
+                if request.method == 'POST':
+                    username = request.form.get('username')
+                    password = request.form.get('password')
 
-                user = User.query.filter_by(username=username).first()
-                if user and check_password_hash(user.password, password):
-                    login_user(user)
-                    flash('Login successful!', 'success')
-                    return redirect(url_for('dashboard'))
+                    user = User.query.filter_by(username=username).first()
+                    if user and check_password_hash(user.password, password):
+                        login_user(user)
+                        flash('Login successful!', 'success')
+                        return redirect(url_for('dashboard'))
 
-                flash('Invalid username or password', 'error')
+                    flash('Invalid username or password', 'error')
                 return render_template('auth/login.html')
-            
+
+            except Exception as e:
+                print(f"❌ Error in /login route: {e}")
+                return "❌ Server error: " + str(e), 500
+
         @app.route('/logout')
         @login_required
         def logout():
