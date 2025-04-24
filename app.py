@@ -10,8 +10,6 @@ def create_app():
         from flask import render_template, redirect, url_for, request, flash, jsonify, abort
         from werkzeug.security import check_password_hash, generate_password_hash
         from datetime import datetime
-        from approval_routes import approval
-
 
         app = Flask(__name__)
         print("✅ Flask app initialized")
@@ -26,8 +24,6 @@ def create_app():
         db.init_app(app)
         login_manager.init_app(app)
         print("✅ Extensions initialized")
-
-        app.register_blueprint(approval)
 
         @login_manager.user_loader
         def load_user(user_id):

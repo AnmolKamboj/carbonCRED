@@ -3,6 +3,7 @@ from extensions import db, init_connection
 from models import User, TravelLog
 from werkzeug.security import generate_password_hash
 from datetime import datetime
+import sys
 
 app = create_app()
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://"
@@ -12,6 +13,11 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     }
 
 with app.app_context():
+    confirm = input("⚠️  Are you sure you want to DROP ALL TABLES? (yes/no): ")
+    if confirm.lower() != "yes":
+        print("❌ Aborted.")
+        sys.exit()
+
     db.drop_all()
     db.create_all()
     print("✔ Tables dropped and recreated")
