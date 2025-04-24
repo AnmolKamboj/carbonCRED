@@ -8,6 +8,9 @@ class User(UserMixin, db.Model):
     password = db.Column(db.Text, nullable=False)
     role = db.Column(db.String(64), nullable=False)
     saved_miles = db.Column(db.Float, default=0)
+    approved = db.Column(db.Boolean, default=False)
+    employer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)  # if employee
+    employees = db.relationship("User", backref=db.backref("employer", remote_side=[id]), lazy=True)
 
 class TravelLog(db.Model):
     __tablename__ = "travel_logs"

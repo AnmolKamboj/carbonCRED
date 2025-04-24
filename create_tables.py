@@ -1,29 +1,44 @@
 from app import create_app
-from extensions import db
+from extensions import db, init_connection
 from models import User, TravelLog
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 
 app = create_app()
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCRED@34.59.6.90:5432/carbon_credits"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://"
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "creator": init_connection(),
+            "pool_recycle": 300
+    }
 
 with app.app_context():
     db.drop_all()
     db.create_all()
     print("✔ Tables dropped and recreated")
 
+    # Create users with approval flow
+    employer = User(
+        username="employer1",
+        password=generate_password_hash("pass123"),
+        role="employer",
+        approved=False
+    )
     employee = User(
         username="employee1",
         password=generate_password_hash("pass123"),
         role="employee",
-        saved_miles=300
+        saved_miles=300,
+        approved=False,
+        employer=employer
     )
-    employer = User(
-        username="employer1",
+    bank = User(
+        username="bank1",
         password=generate_password_hash("pass123"),
-        role="employer"
+        role="bank",
+        approved=True
     )
-    db.session.add_all([employee, employer])
+
+    db.session.add_all([employee, employer, bank])
     db.session.commit()
 
     logs = [
