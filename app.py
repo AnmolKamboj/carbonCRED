@@ -5,6 +5,7 @@ def create_app():
         from flask import Flask
         from extensions import db, login_manager
         from models import User
+        from models import TravelLog
         from flask_login import current_user, login_user, logout_user, login_required
         from flask import render_template, redirect, url_for, request, flash, jsonify, abort
         from werkzeug.security import check_password_hash, generate_password_hash
@@ -95,7 +96,7 @@ def create_app():
                 return redirect(url_for('employee_dashboard'))
             return redirect(url_for('employer_dashboard'))
 
-        '''@app.route('/employee/dashboard')
+        @app.route('/employee/dashboard')
         @login_required
         def employee_dashboard():
             try:
@@ -109,7 +110,7 @@ def create_app():
             )
             except Exception as e:
                 flash("Error: {}".format(e), "error")
-                return redirect(url_for("home"))'''
+                return redirect(url_for("home"))
 
         @app.route('/employer/dashboard')
         @login_required
@@ -117,6 +118,76 @@ def create_app():
             if current_user.role != 'employer':
                 abort(403)
             return render_template('employer/dashboard.html')
+
+        @app.route('/employer/manage-employees')
+        @login_required
+        def manage_employees():
+            try:
+                employees = User.query.filter_by(role="employee").all()
+                return render_template("employer/manage_employees.html", employees=employees)
+            except Exception as e:
+                flash("Error: {}".format(e), "error")
+                return redirect(url_for("home"))
+            
+        @app.route('/employer/marketplace')
+        @login_required
+        def marketplace():
+            if current_user.role != 'employer':
+                abort(403)
+            
+            credits_for_sale = [
+                {"seller": "EcoCorp", "credits": 1500, "price_per_credit": 2.50},
+                {"seller": "GreenTech", "credits": 800, "price_per_credit": 3.00}
+            ]
+            
+            return render_template('employer/marketplace.html', credits_for_sale=credits_for_sale)            
+        
+        def calculate_credits(mode, miles):
+            CREDIT_RATES = {
+                'car': 0,
+                'carpool': 0.5,
+                'bus': 0.7,
+                'bike': 1.0,
+                'wfh': 1.5
+            }
+            return CREDIT_RATES.get(mode, 0) * miles
+
+        @app.route('/log-trip', methods=['POST'])
+        @login_required 
+        def log_trip():
+            data = request.get_json()
+            miles = float(data['miles'])
+            mode = data['mode']
+            
+            credits = calculate_credits(mode, miles)
+            
+            new_log = TravelLog(
+                employee_id=current_user.id,
+                date=datetime.utcnow().date(),
+                mode=mode,
+                miles=miles,
+                credits_earned=credits
+            )
+            db.session.add(new_log)
+            db.session.commit()
+            
+            return jsonify({"credits": credits})
+            
+        @app.route('/employee/travel-log', methods=['GET', 'POST'])
+        @login_required
+        def travel_log():
+            if current_user.role != 'employee':
+                abort(403)
+            
+            if request.method == 'POST':
+                date = request.form.get('date')
+                mode = request.form.get('mode')
+                miles = float(request.form.get('miles'))
+                
+                flash('Travel logged successfully!', 'success')
+                return redirect(url_for('travel_log'))
+            
+            return render_template('employee/travel_log.html')        
 
         with app.app_context():
             db.create_all()
@@ -126,4 +197,4 @@ def create_app():
 
     except Exception as e:
         print(f"❌ Error in create_app: {e}")
-        raise
+        raise e
