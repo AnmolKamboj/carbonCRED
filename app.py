@@ -14,7 +14,7 @@ def create_app():
         print("✅ Flask app initialized")
 
         app.config["SECRET_KEY"] = "013eef93b518082e667c7578a0220857973d3374123bd5043ceb8a3334c160d5"
-        app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCred%40123@34.59.6.90:5432/carbon_credits"
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
 
         db.init_app(app)
         login_manager.init_app(app)
