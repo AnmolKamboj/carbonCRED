@@ -43,6 +43,8 @@ steps:
       DB_PASS=${_DB_PASS},
       DB_NAME=${_DB_NAME},
       DATABASE_URL=postgresql+pg8000://
+    - '--service-account'
+    - '343391902276-compute@developer.gserviceaccount.com'
 
 images:
   - 'gcr.io/software-engineering-457116/carbon-credit-app'
