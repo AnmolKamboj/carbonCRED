@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash
 from datetime import datetime
 
 app = create_app()
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCred%40123@34.59.6.90:5432/carbon_credits"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:CarbonCRED@34.59.6.90:5432/carbon_credits"
 
 with app.app_context():
     db.drop_all()

@@ -2,7 +2,7 @@ substitutions:
   _SECRET_KEY: "013eef93b518082e667c7578a0220857973d3374123bd5043ceb8a3334c160d5"
   _INSTANCE_CONNECTION_NAME: "software-engineering-457116:us-central1:carboncred"
   _DB_USER: "postgres"
-  _DB_PASS: "CarbonCred@123"
+  _DB_PASS: "CarbonCRED"
   _DB_NAME: "carbon_credits"
 
 steps:
