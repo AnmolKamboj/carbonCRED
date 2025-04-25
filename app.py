@@ -67,36 +67,41 @@ def create_app():
 
         @app.route('/register', methods=['GET', 'POST'])
         def register():
+            from models import User
+
+            employers = User.query.filter_by(role='employer', approved=True).all()
+
             if request.method == 'POST':
                 username = request.form.get('username')
                 password = request.form.get('password')
-                role = request.form.get('role')  # 'employee' or 'employer'
-                
-                # Validate input
+                role = request.form.get('role')
+                employer_id = request.form.get('employer_id')  # 🆕
+
                 if not all([username, password, role]):
                     flash('All fields are required', 'error')
                     return redirect(url_for('register'))
-                
-                # Check if username exists
+
                 if User.query.filter_by(username=username).first():
                     flash('Username already exists', 'error')
                     return redirect(url_for('register'))
-                
-                # Create new user
+
                 new_user = User(
                     username=username,
-                    password=generate_password_hash(password),  # Hashed!
+                    password=generate_password_hash(password),
                     role=role,
-                    saved_miles=0 if role == 'employee' else None
+                    saved_miles=0 if role == 'employee' else None,
+                    approved=False,  # New users must be approved
+                    employer_id=int(employer_id) if role == 'employee' and employer_id else None
                 )
-                
+
                 db.session.add(new_user)
                 db.session.commit()
-                
-                flash('Registration successful! Please login', 'success')
+
+                flash('Registration successful! Please login after approval.', 'success')
                 return redirect(url_for('login'))
-            
-            return render_template('auth/register.html')
+
+            return render_template('auth/register.html', employers=employers)
+
 
         @app.route('/dashboard')
         @login_required
