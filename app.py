@@ -10,20 +10,25 @@ def create_app():
         from flask import render_template, redirect, url_for, request, flash, jsonify, abort
         from werkzeug.security import check_password_hash, generate_password_hash
         from datetime import datetime
+        from approval_routes import approval
+
 
         app = Flask(__name__)
         print("✅ Flask app initialized")
 
         app.config["SECRET_KEY"] = "013eef93b518082e667c7578a0220857973d3374123bd5043ceb8a3334c160d5"
-        app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://"
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "creator": init_connection(),
-            "pool_recycle": 300
-        }
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
+        '''app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+                    "creator": init_connection(),
+                    "pool_recycle": 300
+            }'''
+
 
         db.init_app(app)
         login_manager.init_app(app)
         print("✅ Extensions initialized")
+
+        app.register_blueprint(approval)
 
         @login_manager.user_loader
         def load_user(user_id):

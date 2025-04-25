@@ -6,11 +6,11 @@ from datetime import datetime
 import sys
 
 app = create_app()
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://"
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
+'''app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
             "creator": init_connection(),
             "pool_recycle": 300
-    }
+    }'''
 
 with app.app_context():
     confirm = input("⚠️  Are you sure you want to DROP ALL TABLES? (yes/no): ")
