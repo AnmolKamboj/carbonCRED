@@ -4,9 +4,12 @@ from models import User, TravelLog
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 import sys
+from dotenv import load_dotenv
+load_dotenv()
 
 app = create_app()
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 '''app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
             "creator": init_connection(),
             "pool_recycle": 300

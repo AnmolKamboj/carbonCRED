@@ -28,8 +28,6 @@ def create_app():
         login_manager.init_app(app)
         print("✅ Extensions initialized")
 
-        app.register_blueprint(approval)
-
         @login_manager.user_loader
         def load_user(user_id):
             return User.query.get(int(user_id))
@@ -47,9 +45,11 @@ def create_app():
 
                     user = User.query.filter_by(username=username).first()
                     if user and check_password_hash(user.password, password):
+                        if not user.approved:
+                            flash("Account pending approval.", "warning")
+                            return redirect(url_for("login"))
                         login_user(user)
-                        flash('Login successful!', 'success')
-                        return redirect(url_for('dashboard'))
+                        return redirect(url_for("dashboard"))
 
                     flash('Invalid username or password', 'error')
                 return render_template('auth/login.html')
@@ -103,7 +103,13 @@ def create_app():
         def dashboard():
             if current_user.role == 'employee':
                 return redirect(url_for('employee_dashboard'))
-            return redirect(url_for('employer_dashboard'))
+            elif current_user.role == 'employer':
+                return redirect(url_for('employer_dashboard'))
+            elif current_user.role == 'bank':
+                return redirect(url_for('approval.pending_employers'))
+            else:
+                abort(403)  # unknown role
+
 
         @app.route('/employee/dashboard')
         @login_required
@@ -202,7 +208,20 @@ def create_app():
         def debug_users():
             users = User.query.all()
             return jsonify([{"id": u.id, "username": u.username, "role": u.role} for u in users])
+        
+        @app.route("/fix-bank")
+        def fix_bank():
+            from extensions import db
+            from models import User
 
+            bank = User.query.filter_by(username='bank1').first()
+            if bank:
+                bank.approved = True
+                db.session.commit()
+                return "✅ Bank user approved!"
+            return "❌ Bank user not found."
+
+        app.register_blueprint(approval)
 
         with app.app_context():
             db.create_all()
