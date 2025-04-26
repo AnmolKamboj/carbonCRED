@@ -69,13 +69,16 @@ def create_app():
         def register():
             from models import User
 
+            # fetch employers to show in dropdown
             employers = User.query.filter_by(role='employer', approved=True).all()
 
             if request.method == 'POST':
                 username = request.form.get('username')
                 password = request.form.get('password')
                 role = request.form.get('role')
-                employer_id = request.form.get('employer_id')  # 🆕
+                employer_id = request.form.get('employer_id') 
+                print("✅ Registration Form Submitted")
+                print(f"Username: {username}, Role: {role}, Employer ID: {employer_id}")
 
                 if not all([username, password, role]):
                     flash('All fields are required', 'error')
@@ -85,13 +88,17 @@ def create_app():
                     flash('Username already exists', 'error')
                     return redirect(url_for('register'))
 
+                if role == 'employee' and not employer_id:
+                    flash('Employee must select an employer.', 'error')
+                    return redirect(url_for('register'))
+
                 new_user = User(
                     username=username,
                     password=generate_password_hash(password),
                     role=role,
                     saved_miles=0 if role == 'employee' else None,
-                    approved=False,  # New users must be approved
-                    employer_id=int(employer_id) if role == 'employee' and employer_id else None
+                    approved=False,
+                    employer_id=int(employer_id) if role == 'employee' else None
                 )
 
                 db.session.add(new_user)
@@ -100,6 +107,7 @@ def create_app():
                 flash('Registration successful! Please login after approval.', 'success')
                 return redirect(url_for('login'))
 
+            # If method is GET, show registration form
             return render_template('auth/register.html', employers=employers)
 
 

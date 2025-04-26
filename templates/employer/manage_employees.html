@@ -3,26 +3,57 @@
 {% block title %}Manage Employees{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
-    <h2 class="text-2xl font-bold mb-6">Manage Employees</h2>
-    
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Saved Miles</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Credits</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            {% for employee in employees %}
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap">{{ employee.username }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ employee.saved_miles }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ employee.saved_miles * 0.06 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="max-w-4xl mx-auto p-6 bg-white rounded shadow">
+
+  <h2 class="text-2xl font-bold mb-6">Pending Employee Approvals</h2>
+
+  {% if pending_employees %}
+  <table class="min-w-full bg-white border rounded mb-8">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="py-2 px-4 border-b">Username</th>
+        <th class="py-2 px-4 border-b">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for employee in pending_employees %}
+      <tr class="text-center">
+        <td class="py-2 px-4 border-b">{{ employee.username }}</td>
+        <td class="py-2 px-4 border-b">
+          <form method="POST" action="{{ url_for('approval.approve_employee', user_id=employee.id) }}">
+            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+              Approve
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-gray-500 mb-8">No pending employees found.</p>
+  {% endif %}
+
+  <h2 class="text-2xl font-bold mb-6">Approved Employees</h2>
+
+  {% if approved_employees %}
+  <table class="min-w-full bg-white border rounded">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="py-2 px-4 border-b">Username</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for employee in approved_employees %}
+      <tr class="text-center">
+        <td class="py-2 px-4 border-b">{{ employee.username }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-gray-500">No approved employees yet.</p>
+  {% endif %}
+
 </div>
 {% endblock %}
