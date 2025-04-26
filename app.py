@@ -147,16 +147,6 @@ def create_app():
                 abort(403)
             return render_template('employer/dashboard.html')
 
-        @app.route('/employer/manage-employees')
-        @login_required
-        def manage_employees():
-            try:
-                employees = User.query.filter_by(role="employee").all()
-                return render_template("employer/manage_employees.html", employees=employees)
-            except Exception as e:
-                flash("Error: {}".format(e), "error")
-                return redirect(url_for("home"))
-            
         @app.route('/employer/marketplace')
         @login_required
         def marketplace():

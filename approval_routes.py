@@ -45,11 +45,13 @@ def approve_employee(user_id):
         employee.approved = True
         db.session.commit()
         flash('Employee approved successfully!', 'success')
-    return redirect(url_for('approval.pending_employees'))
+    return redirect(url_for('approval.manage_employees')) 
 
 @approval.route('/employer/manage-employees')
 @login_required
 def manage_employees():
+    print("👀 Current User:", current_user.username, current_user.id)
+
     if current_user.role != 'employer':
         return redirect(url_for('dashboard'))
 
@@ -64,6 +66,9 @@ def manage_employees():
         employer_id=current_user.id,
         approved=True
     ).all()
+
+    print("🛠 Pending Employees:", pending_employees)
+    print("🛠 Approved Employees:", approved_employees)
 
     return render_template(
         "employer/manage_employees.html",
