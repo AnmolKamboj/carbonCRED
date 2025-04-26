@@ -130,22 +130,63 @@ def create_app():
             try:
                 logs = TravelLog.query.filter_by(employee_id=current_user.id).all()
                 total_credits = sum(log.credits_earned for log in logs)
+
                 return render_template(
-                "employee/dashboard.html", 
-                logs=logs,
-                total_credits=total_credits,
-                saved_miles=current_user.saved_miles
-            )
+                    'employee/dashboard.html',
+                    travel_logs=logs,
+                    total_credits=total_credits,
+                    saved_miles=current_user.saved_miles,
+                    home_address=current_user.home_address
+                )
             except Exception as e:
                 flash("Error: {}".format(e), "error")
-                return redirect(url_for("home"))
+                return redirect(url_for('home'))
+            
+        @app.route('/employee/set-home-address', methods=['POST'])
+        @login_required
+        def employee_set_home_address():
+            if current_user.role != 'employee':
+                abort(403)
+
+            home_address = request.form.get('home_address')
+            if home_address:
+                current_user.home_address = home_address
+                db.session.commit()
+                flash('Home address saved successfully!', 'success')
+            
+            return redirect(url_for('employee_dashboard'))
+    
 
         @app.route('/employer/dashboard')
         @login_required
         def employer_dashboard():
             if current_user.role != 'employer':
                 abort(403)
-            return render_template('employer/dashboard.html')
+
+            # Fetch employees under this employer
+            employees = User.query.filter_by(role='employee', employer_id=current_user.id, approved=True).all()
+
+            # Calculate total credits
+            total_credits = 0
+            leaderboard = []
+            for emp in employees:
+                employee_logs = TravelLog.query.filter_by(employee_id=emp.id).all()
+                emp_credits = sum(log.credits_earned for log in employee_logs)
+                total_credits += emp_credits
+                leaderboard.append({'username': emp.username, 'total_credits': emp_credits})
+
+            # Sort leaderboard by highest credits
+            leaderboard = sorted(leaderboard, key=lambda x: x['total_credits'], reverse=True)
+
+            return render_template(
+                'employer/dashboard.html',
+                company_name=current_user.username,
+                employee_count=len(employees),
+                total_credits=total_credits,
+                leaderboard=leaderboard,
+                work_address=current_user.work_address
+            )
+
 
         @app.route('/employer/marketplace')
         @login_required
@@ -158,7 +199,21 @@ def create_app():
                 {"seller": "GreenTech", "credits": 800, "price_per_credit": 3.00}
             ]
             
-            return render_template('employer/marketplace.html', credits_for_sale=credits_for_sale)            
+            return render_template('employer/marketplace.html', credits_for_sale=credits_for_sale)      
+
+        @app.route('/employer/set-work-address', methods=['POST'])
+        @login_required
+        def employer_set_work_address():
+            if current_user.role != 'employer':
+                abort(403)
+            
+            work_address = request.form.get('work_address')
+            if work_address:
+                current_user.work_address = work_address
+                db.session.commit()
+                flash('Work address saved successfully!', 'success')
+            
+            return redirect(url_for('employer_dashboard'))
         
         def calculate_credits(mode, miles):
             CREDIT_RATES = {

@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
     <!-- Progress Card -->
     <div class="bg-white p-6 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">Monthly Progress</h3>
@@ -21,19 +22,66 @@
             </div>
             
             <div class="text-center text-sm text-gray-600">
-                Earned Credits: {{ earned_credits }}
+                Earned Credits: {{ total_credits }}
             </div>
         </div>
     </div>
 
-    <!-- Recent Logs Section (unchanged) -->
-    <!-- ... -->
+    <!-- Home Address Display -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h3 class="text-lg font-semibold mb-4">Home Address</h3>
+        
+        {% if home_address %}
+          <p class="text-gray-700">{{ home_address }}</p>
+        {% else %}
+          <p class="text-red-500">Home address not set yet.</p>
+          <form method="POST" action="{{ url_for('employee_set_home_address') }}" class="mt-4">
+            <input id="address-input" type="text" name="home_address" 
+            placeholder="Enter Home Address" 
+            class="w-full px-3 py-2 border rounded mb-2" required>
+            <button type="submit" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition">
+              Save Address
+            </button>
+          </form>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Recent Travel Logs Section -->
+<div class="bg-white p-6 rounded-lg shadow mt-8">
+    <h3 class="text-xl font-semibold mb-4">Your Travel Logs</h3>
+
+    <table class="w-full text-left">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="p-2">Date</th>
+                <th class="p-2">Transport Mode</th>
+                <th class="p-2">Miles</th>
+                <th class="p-2">Credits</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in travel_logs %}
+            <tr class="border-b">
+                <td class="p-2">{{ log.date }}</td>
+                <td class="p-2">{{ log.mode }}</td>
+                <td class="p-2">{{ log.miles }}</td>
+                <td class="p-2">{{ log.credits_earned }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center text-gray-400 p-2">No travel logs yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
 <!-- Log Travel Button -->
-<div class="mt-6">
+<div class="mt-6 text-center">
     <a href="{{ url_for('travel_log') }}" 
-       class="inline-block bg-green-500 text-white font-medium px-5 py-2 rounded-lg hover:bg-green-600 transition">
+       class="inline-block bg-green-500 text-white font-medium px-6 py-3 rounded-lg hover:bg-green-600 transition">
        Log New Travel
     </a>
 </div>

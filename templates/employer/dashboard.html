@@ -1,38 +1,84 @@
-<!-- templates/employer/dashboard.html -->
 {% extends "layouts/base.html" %}
 
 {% block title %}Employer Dashboard{% endblock %}
 
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Company Metrics -->
-    <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow">
-        <h2 class="text-xl font-semibold mb-4">{{ company_name }} Metrics</h2>
-        <div class="grid grid-cols-2 gap-4">
-            <div class="bg-green-50 p-4 rounded-lg">
-                <div class="text-sm text-green-800">Total Credits</div>
-                <div class="text-2xl font-bold">{{ total_credits }}</div>
-            </div>
-            <div class="bg-blue-50 p-4 rounded-lg">
-                <div class="text-sm text-blue-800">Employees</div>
-                <div class="text-2xl font-bold">{{ employee_count }}</div>
-            </div>
-        </div>
+
+  <!-- Company Metrics -->
+  <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow">
+    <h2 class="text-xl font-semibold mb-4">{{ company_name }} Metrics</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-green-50 p-4 rounded-lg">
+        <div class="text-sm text-green-800">Total Credits</div>
+        <div class="text-2xl font-bold">{{ total_credits }}</div>
+      </div>
+      <div class="bg-blue-50 p-4 rounded-lg">
+        <div class="text-sm text-blue-800">Employees</div>
+        <div class="text-2xl font-bold">{{ employee_count }}</div>
+      </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-white p-6 rounded-lg shadow">
-        <h3 class="font-semibold mb-4">Quick Actions</h3>
-        <div class="space-y-3">
-            <a href="{{ url_for('approval.manage_employees') }}" 
-               class="block p-3 text-sm bg-gray-100 rounded-md hover:bg-gray-200">
-               Manage Employees
-            </a>
-            <a href="{{ url_for('marketplace') }}" 
-               class="block p-3 text-sm bg-gray-100 rounded-md hover:bg-gray-200">
-               Enter Marketplace
-            </a>
-        </div>
+    <!-- 🏢 Work Address Setup -->
+    {% if not work_address %}
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-2">Set Work Address</h3>
+        <form method="POST" action="{{ url_for('employer_set_work_address') }}">
+            <input id="address-input" type="text" name="work_address" 
+            placeholder="Enter Work Address" 
+            class="w-full px-3 py-2 border rounded mb-2" required>     
+          <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+            Save Work Address
+          </button>
+        </form>
+      </div>
+    {% else %}
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-2">Work Address</h3>
+        <p class="bg-gray-100 p-3 rounded">{{ work_address }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="bg-white p-6 rounded-lg shadow">
+    <h3 class="font-semibold mb-4">Quick Actions</h3>
+    <div class="space-y-3">
+      <a href="{{ url_for('approval.manage_employees') }}" 
+         class="block p-3 text-sm bg-gray-100 rounded-md hover:bg-gray-200">
+         Manage Employees
+      </a>
+      <a href="{{ url_for('marketplace') }}" 
+         class="block p-3 text-sm bg-gray-100 rounded-md hover:bg-gray-200">
+         Enter Marketplace
+      </a>
     </div>
+  </div>
+
+</div>
+
+<!-- 🏆 Employee Leaderboard -->
+<div class="bg-white p-6 rounded-lg shadow mt-8">
+  <h2 class="text-xl font-semibold mb-4">Employee Leaderboard</h2>
+  <table class="w-full text-left">
+    <thead>
+      <tr class="bg-gray-100">
+        <th class="p-2">Employee</th>
+        <th class="p-2">Credits Earned</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for employee in leaderboard %}
+      <tr class="border-b">
+        <td class="p-2">{{ employee.username }}</td>
+        <td class="p-2">{{ employee.total_credits }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="2" class="p-2 text-center text-gray-400">No employees yet</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}

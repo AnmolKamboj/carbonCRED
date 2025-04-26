@@ -7,8 +7,21 @@
     <title>Carbon Credit Platform - {% block title %}{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    <!-- ✅ Load Google Maps API with Places library -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLNCFaxT5w5F2Qb3xMVCEzpi2xK8nYu0I&libraries=places"></script>
+
+    <script>
+      function initAutocomplete() {
+        const input = document.getElementById('address-input');
+        if (input) {
+          const autocomplete = new google.maps.places.Autocomplete(input);
+        }
+      }
+    </script>
 </head>
-<body class="bg-gray-50">
+
+<body class="bg-gray-50" onload="initAutocomplete()">
     <nav class="bg-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center py-4">

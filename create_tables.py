@@ -38,8 +38,9 @@ with app.app_context():
         role="employee",
         saved_miles=300,
         approved=False,
-        employer=employer
+        employer_id=employer.id  # ✅ correct
     )
+
     bank = User(
         username="bank1",
         password=generate_password_hash("pass123"),
