@@ -6,6 +6,7 @@ def create_app():
         from extensions import db, login_manager, init_connection
         from models import User
         from models import TravelLog
+        from models import MarketplaceListing
         from flask_login import current_user, login_user, logout_user, login_required
         from flask import render_template, redirect, url_for, request, flash, jsonify, abort
         from werkzeug.security import check_password_hash, generate_password_hash
@@ -169,16 +170,18 @@ def create_app():
             employees = User.query.filter_by(role='employee', employer_id=current_user.id, approved=True).all()
 
             # Calculate total credits
-            total_credits = 0
+            earned_credits = 0
             leaderboard = []
             for emp in employees:
                 employee_logs = TravelLog.query.filter_by(employee_id=emp.id).all()
                 emp_credits = sum(log.credits_earned for log in employee_logs)
-                total_credits += emp_credits
+                earned_credits += emp_credits
                 leaderboard.append({'username': emp.username, 'total_credits': emp_credits})
 
             # Sort leaderboard by highest credits
             leaderboard = sorted(leaderboard, key=lambda x: x['total_credits'], reverse=True)
+
+            total_credits = earned_credits + current_user.total_credits
 
             return render_template(
                 'employer/dashboard.html',
@@ -190,19 +193,66 @@ def create_app():
             )
 
 
+        # View the marketplace
         @app.route('/employer/marketplace')
         @login_required
         def marketplace():
             if current_user.role != 'employer':
                 abort(403)
             
-            credits_for_sale = [
-                {"seller": "EcoCorp", "credits": 1500, "price_per_credit": 2.50},
-                {"seller": "GreenTech", "credits": 800, "price_per_credit": 3.00}
-            ]
-            
-            return render_template('employer/marketplace.html', credits_for_sale=credits_for_sale)      
+            listings = MarketplaceListing.query.filter_by(is_active=True).all()
+            listings_with_sellers = []
+            for listing in listings:
+                seller = User.query.get(listing.seller_id)
+                listings_with_sellers.append({
+                    "id": listing.id,
+                    "seller_name": seller.username if seller else "Unknown",
+                    "credits": listing.credits,
+                    "price_per_credit": listing.price_per_credit
+                })
 
+            return render_template('employer/marketplace.html', listings=listings_with_sellers)
+     
+        #Buy credits
+        @app.route('/purchase_credit', methods=['POST'])
+        @login_required
+        def purchase_credit():
+            listing_id = request.form.get('listing_id')
+            listing = MarketplaceListing.query.get(listing_id)
+
+            if listing and listing.credits > 0:
+                # You could enhance this later to specify how many credits to buy
+                listing.credits -= 1
+                current_user.total_credits+=1
+                db.session.commit()
+                flash('✅ Successfully purchased 1 credit!', 'success')
+            else:
+                flash('❌ Listing not available.', 'danger')
+
+            return redirect(url_for('marketplace'))
+
+        #Sell credits
+        @app.route('/sell_credit', methods=['POST'])
+        @login_required
+        def sell_credit():
+            credits = int(request.form.get('credits'))
+            price_per_credit = float(request.form.get('price_per_credit'))
+
+            if credits > 0 and price_per_credit > 0:
+                new_listing = MarketplaceListing(
+                    seller_id=current_user.id,
+                    credits=credits,
+                    price_per_credit=price_per_credit
+                )
+                db.session.add(new_listing)
+                db.session.commit()
+                flash('✅ Your credits have been listed for sale!', 'success')
+            else:
+                flash('❌ Invalid input.', 'danger')
+
+            return redirect(url_for('marketplace'))
+
+        #Work address
         @app.route('/employer/set-work-address', methods=['POST'])
         @login_required
         def employer_set_work_address():

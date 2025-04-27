@@ -1,11 +1,11 @@
 from app import create_app
 from extensions import db, init_connection
-from models import User, TravelLog
+from models import User, TravelLog, MarketplaceListing
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 import sys
-from dotenv import load_dotenv
 load_dotenv()
+from dotenv import load_dotenv
 
 app = create_app()
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
@@ -30,14 +30,19 @@ with app.app_context():
         username="employer1",
         password=generate_password_hash("pass123"),
         role="employer",
-        approved=False
+        approved=True,
+        total_credits=0
     )
+
+    db.session.add(employer)
+    db.session.commit()
+
     employee = User(
         username="employee1",
         password=generate_password_hash("pass123"),
         role="employee",
         saved_miles=300,
-        approved=False,
+        approved=True,
         employer_id=employer.id  # ✅ correct
     )
 
@@ -48,7 +53,7 @@ with app.app_context():
         approved=True
     )
 
-    db.session.add_all([employee, employer, bank])
+    db.session.add_all([employee, bank])
     db.session.commit()
 
     logs = [
@@ -57,5 +62,19 @@ with app.app_context():
         TravelLog(employee_id=employee.id, date=datetime(2024, 4, 3), mode="wfh", miles=0, credits_earned=0)
     ]
     db.session.add_all(logs)
+    db.session.commit()
+
+    # ✅ Insert Marketplace listings
+    listing1 = MarketplaceListing(
+        seller_id=employer.id,
+        credits=500,
+        price_per_credit=2.5
+    )
+    listing2 = MarketplaceListing(
+        seller_id=employer.id,
+        credits=300,
+        price_per_credit=3.0
+    )
+    db.session.add_all([listing1, listing2])
     db.session.commit()
     print("✔ Mock data inserted")
