@@ -11,6 +11,8 @@ def create_app():
         from werkzeug.security import check_password_hash, generate_password_hash
         from datetime import datetime
         from approval_routes import approval
+        from utils import calculate_home_work_distance, gemini_predict_travel_mode
+
 
 
         app = Flask(__name__)
@@ -246,7 +248,7 @@ def create_app():
             
             return jsonify({"credits": credits})
             
-        @app.route('/employee/travel-log', methods=['GET', 'POST'])
+        @app.route('/employee/travel-log', methods=['GET'])
         @login_required
         def travel_log():
             if current_user.role != 'employee':
@@ -261,6 +263,58 @@ def create_app():
                 return redirect(url_for('travel_log'))
             
             return render_template('employee/travel_log.html')    
+        
+        @app.route('/employee/log-trip', methods=['POST'])
+        @login_required
+        def employee_log_trip():
+            if current_user.role != 'employee':
+                abort(403)
+
+            image = request.files.get('image')
+            if not image:
+                flash('No image uploaded.', 'error')
+                return redirect(url_for('employee_dashboard'))
+
+            # Step 1: Predict Transport Mode (placeholder for now)
+            mode = gemini_predict_travel_mode(image)
+
+            if mode not in ['carpool', 'public_transport', 'wfh', 'bike']:
+                flash('Invalid travel proof. Could not verify valid transport mode.', 'error')
+                return redirect(url_for('employee_dashboard'))
+
+            # 🛠 Fetch Employer
+            employer = User.query.get(current_user.employer_id)
+            if not employer or not employer.work_address:
+                flash('Employer work address missing.', 'error')
+                return redirect(url_for('employee_dashboard'))
+
+            # Step 2: Calculate distance
+            miles = calculate_home_work_distance(current_user.home_address, employer.work_address)
+
+            miles = calculate_home_work_distance(current_user.home_address, employer.work_address)
+
+            if miles is None:
+                flash('Could not calculate distance. Please check addresses.', 'error')
+                return redirect(url_for('employee_dashboard'))
+
+
+            # Step 3: Calculate credits
+            credits = calculate_credits(mode, miles)
+
+            # Step 4: Save travel log
+            new_log = TravelLog(
+                employee_id=current_user.id,
+                date=datetime.utcnow().date(),
+                mode=mode,
+                miles=miles,
+                credits_earned=credits
+            )
+            db.session.add(new_log)
+            db.session.commit()
+
+            flash(f'Trip logged successfully! You earned {credits:.2f} credits.', 'success')
+            return redirect(url_for('employee_dashboard'))
+
 
         @app.route('/debug-users')
         def debug_users():
