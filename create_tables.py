@@ -4,9 +4,9 @@ from models import User, TravelLog, MarketplaceListing
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 import sys
-load_dotenv()
 from dotenv import load_dotenv
 
+load_dotenv()
 app = create_app()
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
