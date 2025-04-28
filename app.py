@@ -6,6 +6,7 @@ def create_app():
         from extensions import db, login_manager, init_connection
         from models import User
         from models import TravelLog
+        from models import MarketplaceListing
         from flask_login import current_user, login_user, logout_user, login_required
         from flask import render_template, redirect, url_for, request, flash, jsonify, abort
         from werkzeug.security import check_password_hash, generate_password_hash
@@ -169,16 +170,18 @@ def create_app():
             employees = User.query.filter_by(role='employee', employer_id=current_user.id, approved=True).all()
 
             # Calculate total credits
-            total_credits = 0
+            earned_credits = 0
             leaderboard = []
             for emp in employees:
                 employee_logs = TravelLog.query.filter_by(employee_id=emp.id).all()
                 emp_credits = sum(log.credits_earned for log in employee_logs)
-                total_credits += emp_credits
+                earned_credits += emp_credits
                 leaderboard.append({'username': emp.username, 'total_credits': emp_credits})
 
             # Sort leaderboard by highest credits
             leaderboard = sorted(leaderboard, key=lambda x: x['total_credits'], reverse=True)
+
+            total_credits = current_user.total_credits
 
             return render_template(
                 'employer/dashboard.html',
@@ -190,19 +193,98 @@ def create_app():
             )
 
 
+        # View the marketplace
         @app.route('/employer/marketplace')
         @login_required
         def marketplace():
             if current_user.role != 'employer':
                 abort(403)
             
-            credits_for_sale = [
-                {"seller": "EcoCorp", "credits": 1500, "price_per_credit": 2.50},
-                {"seller": "GreenTech", "credits": 800, "price_per_credit": 3.00}
-            ]
-            
-            return render_template('employer/marketplace.html', credits_for_sale=credits_for_sale)      
+            listings = MarketplaceListing.query.filter(MarketplaceListing.seller_id != current_user.id).all()
+            listings_with_sellers = []
+            for listing in listings:
+                seller = User.query.get(listing.seller_id)
+                listings_with_sellers.append({
+                    "id": listing.id,
+                    "seller_name": seller.username if seller else "Unknown",
+                    "credits": listing.credits,
+                    "price_per_credit": listing.price_per_credit
+                })
 
+            return render_template('employer/marketplace.html', listings=listings_with_sellers)
+
+        @app.route("/purchase_credit", methods=["POST"])
+        @login_required
+        def purchase_credit():
+            listing_id = request.form.get("listing_id")
+            quantity = int(request.form.get("quantity_number") or request.form.get("quantity") or 1)
+
+            listing = MarketplaceListing.query.get(listing_id)
+
+            if not listing:
+                flash("Listing not found.", "error")
+                return redirect(url_for('marketplace'))
+
+            if listing.credits < quantity:
+                flash(f"Not enough credits available. Only {listing.credits} left.", "error")
+                return redirect(url_for('marketplace'))
+
+            # Update buyer and listing
+            current_user.total_credits += quantity
+            listing.credits -= quantity
+
+            if listing.credits == 0:
+                db.session.delete(listing)
+
+            db.session.commit()
+            flash(f"Successfully purchased {quantity} credits!", "success")
+            return redirect(url_for('marketplace'))
+
+        @app.route("/sell_credit", methods=["POST"])
+        @login_required
+        def sell_credit():
+            credits = int(request.form.get("credits"))
+            price_per_credit = float(request.form.get("price_per_credit"))
+
+            if credits <= 0 or price_per_credit <= 0:
+                flash("Credits and price must be positive.", "error")
+                return redirect(url_for("marketplace"))
+
+            user = User.query.get(current_user.id)
+
+            print(f"DEBUG: User total_credits = {user.total_credits}, Trying to sell = {credits}")
+
+            if user.total_credits < credits:
+                flash("You don't have enough credits to sell.", "error")
+                return redirect(url_for("marketplace"))
+
+            # 🔥 Check if a listing by the same seller with the same price already exists
+            existing_listing = MarketplaceListing.query.filter_by(
+                seller_id=user.id,
+                price_per_credit=price_per_credit
+            ).first()
+
+            if existing_listing:
+                # If it exists, just add the credits
+                existing_listing.credits += credits
+            else:
+                # Else, create a new listing
+                new_listing = MarketplaceListing(
+                    seller_id=user.id,
+                    credits=credits,
+                    price_per_credit=price_per_credit
+                )
+                db.session.add(new_listing)
+
+            user.total_credits -= credits  # Always subtract from seller's total credits
+
+            db.session.commit()
+            flash("Credits listed for sale successfully!", "success")
+            return redirect(url_for("marketplace"))
+
+
+
+        #Work address
         @app.route('/employer/set-work-address', methods=['POST'])
         @login_required
         def employer_set_work_address():
@@ -278,7 +360,7 @@ def create_app():
             # Step 1: Predict Transport Mode (placeholder for now)
             mode = gemini_predict_travel_mode(image)
 
-            if mode not in ['carpool', 'public_transport', 'wfh', 'bicycle']:
+            if mode not in ['carpool', 'public_transport', 'wfh', 'bike']:
                 flash('Invalid travel proof. Could not verify valid transport mode.', 'error')
                 return redirect(url_for('employee_dashboard'))
 
@@ -300,6 +382,7 @@ def create_app():
 
             # Step 3: Calculate credits
             credits = calculate_credits(mode, miles)
+            credits = round(credits, 2)
 
             # Step 4: Save travel log
             new_log = TravelLog(
@@ -310,6 +393,9 @@ def create_app():
                 credits_earned=credits
             )
             db.session.add(new_log)
+
+            employer.total_credits += credits
+
             db.session.commit()
 
             flash(f'Trip logged successfully! You earned {credits:.2f} credits.', 'success')

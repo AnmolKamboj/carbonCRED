@@ -12,21 +12,68 @@
         <h3 class="text-xl font-semibold mb-4">Available Credits to Buy</h3>
         <div class="grid grid-cols-1 gap-4">
             {% for listing in listings %}
-            <div class="border rounded-lg p-4 hover:bg-gray-50 flex justify-between items-center">
-                <div>
-                    <h4 class="font-semibold">{{ listing.seller_name }}</h4>
-                    <p class="text-sm text-gray-600">{{ listing.credits }} credits available</p>
+            {% if listing.seller_id != current_user.id %}
+            <div class="border rounded-lg p-4 hover:bg-gray-50 space-y-4">
+                <div class="flex justify-between">
+                    <div class="flex flex-col">
+                        <h4 class="font-semibold">{{ listing.seller_name }}</h4>
+                        <p class="text-sm text-gray-600">{{ listing.credits }} credits available</p>
+                    </div>
+                    <div class="flex flex-col text-right">
+                        <p class="font-bold">${{ "%.2f"|format(listing.price_per_credit) }}/credit</p>
+                    </div>
                 </div>
-                <div class="text-right">
-                    <p class="font-bold">${{ "%.2f"|format(listing.price_per_credit) }}/credit</p>
-                    <form action="{{ url_for('purchase_credit') }}" method="POST" class="mt-2">
-                        <input type="hidden" name="listing_id" value="{{ listing.id }}">
-                        <button type="submit" class="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700">
-                            Purchase
-                        </button>
-                    </form>
-                </div>
+                <form action="{{ url_for('purchase_credit') }}" method="POST" class="flex items-center space-x-4">
+                    <input type="hidden" name="listing_id" value="{{ listing.id }}">
+                
+                    <!-- Slider -->
+                    <input 
+                        type="range" 
+                        name="quantity_slider" 
+                        id="quantity_slider_{{ listing.id }}" 
+                        min="1" 
+                        max="{{ listing.credits }}" 
+                        value="1"
+                        class="flex-1 h-2 bg-green-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500
+                            [&::-webkit-slider-thumb]:appearance-none
+                            [&::-webkit-slider-thumb]:h-5
+                            [&::-webkit-slider-thumb]:w-5
+                            [&::-webkit-slider-thumb]:rounded-full
+                            [&::-webkit-slider-thumb]:bg-green-600
+                            [&::-webkit-slider-thumb]:border-none
+                            [&::-webkit-slider-thumb]:shadow-md
+                            [&::-moz-range-thumb]:appearance-none
+                            [&::-moz-range-thumb]:h-5
+                            [&::-moz-range-thumb]:w-5
+                            [&::-moz-range-thumb]:rounded-full
+                            [&::-moz-range-thumb]:bg-green-600
+                            [&::-moz-range-thumb]:border-none
+                            [&::-moz-range-thumb]:shadow-md
+                        "
+                        oninput="document.getElementById('quantity_input_{{ listing.id }}').value = this.value"
+                    >
+                
+                    <!-- Quantity Input -->
+                    <input 
+                        type="number" 
+                        name="quantity" 
+                        id="quantity_input_{{ listing.id }}" 
+                        min="1" 
+                        max="{{ listing.credits }}" 
+                        value="1"
+                        required
+                        class="w-20 h-10 px-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-center"
+                        oninput="document.getElementById('quantity_slider_{{ listing.id }}').value = this.value"
+                    >
+                
+                    <!-- Purchase Button -->
+                    <button type="submit" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 text-sm">
+                        Purchase
+                    </button>
+                </form>
+                               
             </div>
+            {% endif %}
             {% else %}
             <p class="text-gray-500">No credits currently available.</p>
             {% endfor %}
@@ -39,16 +86,22 @@
     <section>
         <h3 class="text-xl font-semibold mb-4">Sell Your Credits</h3>
         <form action="{{ url_for('sell_credit') }}" method="POST" class="space-y-4">
-            <div>
-                <label for="credits" class="block text-sm font-medium text-gray-700">Number of Credits</label>
-                <input type="number" name="credits" id="credits" required
-                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm">
+            <div class="flex gap-4">
+                <!-- Number of Credits -->
+                <div class="flex-1">
+                    <label for="credits" class="block text-sm font-medium text-gray-700">Credits</label>
+                    <input type="number" name="credits" min="1" id="credits" required
+                    class="mt-1 block w-full h-8 pl-4 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 sm:text-sm">
+
+                </div>
+                <!-- Price per Credit -->
+                <div class="flex-1">
+                    <label for="price_per_credit" class="block text-sm font-medium text-gray-700">Price ($/credit)</label>
+                    <input type="number" step="0.01" min="0.01" name="price_per_credit" id="price_per_credit" required
+                    class="mt-1 block w-full h-8 pl-4 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 sm:text-sm">
+                </div>
             </div>
-            <div>
-                <label for="price_per_credit" class="block text-sm font-medium text-gray-700">Price per Credit ($)</label>
-                <input type="number" step="0.01" name="price_per_credit" id="price_per_credit" required
-                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm">
-            </div>
+    
             <div>
                 <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
                     List Credits for Sale
@@ -58,4 +111,27 @@
     </section>
 
 </div>
+
+<!-- JavaScript to Sync Slider and Number Box -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const sliders = document.querySelectorAll("input[type=range][id^='quantity-']");
+        sliders.forEach(slider => {
+            const listingId = slider.id.split("-")[1];
+            const numberInput = document.getElementById(`quantity_number-${listingId}`);
+    
+            if (slider && numberInput) {
+                slider.addEventListener('input', () => {
+                    numberInput.value = slider.value;
+                });
+    
+                numberInput.addEventListener('input', () => {
+                    slider.value = numberInput.value;
+                });
+            }
+        });
+    });
+    </script>
+    
+
 {% endblock %}

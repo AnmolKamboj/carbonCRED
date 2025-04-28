@@ -4,9 +4,9 @@ from models import User, TravelLog, MarketplaceListing
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 import sys
-from dotenv import load_dotenv
+##from dotenv import load_dotenv
+##load_dotenv()
 
-load_dotenv()
 app = create_app()
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -25,27 +25,41 @@ with app.app_context():
     db.create_all()
     print("✔ Tables dropped and recreated")
 
-    # Create users with approval flow
-    employer = User(
+    # Create employers
+    employer1 = User(
         username="employer1",
         password=generate_password_hash("pass123"),
         role="employer",
         approved=True,
         total_credits=0
     )
-
-    db.session.add(employer)
+    employer2 = User(
+        username="employer2",
+        password=generate_password_hash("pass123"),
+        role="employer",
+        approved=True,
+        total_credits=0
+    )
+    db.session.add_all([employer1, employer2])
     db.session.commit()
 
-    employee = User(
+    # Create employees
+    employee1 = User(
         username="employee1",
         password=generate_password_hash("pass123"),
         role="employee",
         saved_miles=300,
         approved=True,
-        employer_id=employer.id  # ✅ correct
+        employer_id=employer1.id  # Linked to employer1
     )
-
+    employee2 = User(
+        username="employee2",
+        password=generate_password_hash("pass123"),
+        role="employee",
+        saved_miles=250,
+        approved=True,
+        employer_id=employer2.id  # Linked to employer2
+    )
     bank = User(
         username="bank1",
         password=generate_password_hash("pass123"),
@@ -53,25 +67,31 @@ with app.app_context():
         approved=True
     )
 
-    db.session.add_all([employee, bank])
+    db.session.add_all([employee1, employee2, bank])
     db.session.commit()
 
+    # Create travel logs for employee1
     logs = [
-        TravelLog(employee_id=employee.id, date=datetime(2024, 4, 1), mode="carpool", miles=10, credits_earned=5),
-        TravelLog(employee_id=employee.id, date=datetime(2024, 4, 2), mode="bike", miles=5, credits_earned=5),
-        TravelLog(employee_id=employee.id, date=datetime(2024, 4, 3), mode="wfh", miles=0, credits_earned=0)
+        TravelLog(employee_id=employee1.id, date=datetime(2024, 4, 1), mode="carpool", miles=10, credits_earned=5),
+        TravelLog(employee_id=employee1.id, date=datetime(2024, 4, 2), mode="bike", miles=5, credits_earned=5),
+        TravelLog(employee_id=employee1.id, date=datetime(2024, 4, 3), mode="wfh", miles=0, credits_earned=0)
     ]
     db.session.add_all(logs)
     db.session.commit()
 
-    # ✅ Insert Marketplace listings
+    total_earned = db.session.query(db.func.sum(TravelLog.credits_earned)).filter_by(employee_id=employee1.id).scalar() or 0
+    employer1.total_credits += total_earned
+    
+    db.session.commit()
+
+    # Insert Marketplace listings
     listing1 = MarketplaceListing(
-        seller_id=employer.id,
+        seller_id=employer1.id,
         credits=500,
         price_per_credit=2.5
     )
     listing2 = MarketplaceListing(
-        seller_id=employer.id,
+        seller_id=employer2.id,
         credits=300,
         price_per_credit=3.0
     )
