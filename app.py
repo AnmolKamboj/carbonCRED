@@ -278,7 +278,7 @@ def create_app():
             # Step 1: Predict Transport Mode (placeholder for now)
             mode = gemini_predict_travel_mode(image)
 
-            if mode not in ['carpool', 'public_transport', 'wfh', 'bike']:
+            if mode not in ['carpool', 'public_transport', 'wfh', 'bicycle']:
                 flash('Invalid travel proof. Could not verify valid transport mode.', 'error')
                 return redirect(url_for('employee_dashboard'))
 
