@@ -301,11 +301,10 @@ def create_app():
         
         def calculate_credits(mode, miles):
             CREDIT_RATES = {
-                'car': 0,
-                'carpool': 0.5,
-                'bus': 0.7,
-                'bike': 1.0,
-                'wfh': 1.5
+                'carpool': 2,
+                'public_transport': 3,
+                'bicycle': 5,
+                'wfh': 4
             }
             return CREDIT_RATES.get(mode, 0) * miles
 
@@ -357,48 +356,72 @@ def create_app():
                 flash('No image uploaded.', 'error')
                 return redirect(url_for('employee_dashboard'))
 
-            # Step 1: Predict Transport Mode (placeholder for now)
+            # Get Form Inputs
+            date_str = request.form.get('date')
+            trip_type = request.form.get('trip_type')
+
+            if trip_type == "home":
+                # Fetch employer
+                employer = User.query.get(current_user.employer_id)
+                if not employer or not employer.work_address:
+                    flash('Work address missing. Please ask your employer to set it.', 'error')
+                    return redirect(url_for('employee_dashboard'))
+
+                start_address = current_user.home_address
+                end_address = employer.work_address
+
+                print(f"🏡 Home Address: {start_address}")
+                print(f"🏢 Work Address: {end_address}")
+
+                if not start_address or not end_address:
+                    flash('Home or Work Address is missing.', 'error')
+                    return redirect(url_for('employee_dashboard'))
+
+            elif trip_type == "custom":
+                start_address = request.form.get('start_address')
+                end_address = request.form.get('end_address')
+            else:
+                flash('Invalid trip type selected.', 'error')
+                return redirect(url_for('employee_dashboard'))
+
+            if not all([date_str, start_address, end_address]):
+                flash('Please fill all fields.', 'error')
+                return redirect(url_for('employee_dashboard'))
+
+            # Step 1: Gemini Predict Transport Mode
             mode = gemini_predict_travel_mode(image)
 
-            if mode not in ['carpool', 'public_transport', 'wfh', 'bike']:
-                flash('Invalid travel proof. Could not verify valid transport mode.', 'error')
+            if mode not in ['carpool', 'public_transport', 'wfh', 'bicycle']:
+                flash('Invalid travel mode detected.', 'error')
                 return redirect(url_for('employee_dashboard'))
 
-            # 🛠 Fetch Employer
-            employer = User.query.get(current_user.employer_id)
-            if not employer or not employer.work_address:
-                flash('Employer work address missing.', 'error')
-                return redirect(url_for('employee_dashboard'))
-
-            # Step 2: Calculate distance
-            miles = calculate_home_work_distance(current_user.home_address, employer.work_address)
-
-            miles = calculate_home_work_distance(current_user.home_address, employer.work_address)
+            # Step 2: Calculate Miles
+            miles = calculate_home_work_distance(start_address, end_address)
 
             if miles is None:
-                flash('Could not calculate distance. Please check addresses.', 'error')
+                flash('Error calculating distance.', 'error')
                 return redirect(url_for('employee_dashboard'))
 
+            # Step 3: Parse Date
+            try:
+                trip_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except Exception as e:
+                flash('Invalid date format.', 'error')
+                return redirect(url_for('employee_dashboard'))
 
-            # Step 3: Calculate credits
-            credits = calculate_credits(mode, miles)
-            credits = round(credits, 2)
-
-            # Step 4: Save travel log
+            # Step 4: Save Travel Log
             new_log = TravelLog(
                 employee_id=current_user.id,
-                date=datetime.utcnow().date(),
+                date=trip_date,
                 mode=mode,
                 miles=miles,
-                credits_earned=credits
+                credits_earned=calculate_credits(mode, miles)
             )
+
             db.session.add(new_log)
-
-            employer.total_credits += credits
-
             db.session.commit()
 
-            flash(f'Trip logged successfully! You earned {credits:.2f} credits.', 'success')
+            flash(f"Trip logged successfully! Earned {new_log.credits_earned:.2f} credits.", 'success')
             return redirect(url_for('employee_dashboard'))
 
 

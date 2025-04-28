@@ -14,6 +14,15 @@
     <script>
       function initAutocomplete() {
         const input = document.getElementById('address-input');
+        const startInput = document.getElementById('start-address');
+        const endInput = document.getElementById('end-address');
+    
+        if (startInput) {
+            const startAutocomplete = new google.maps.places.Autocomplete(startInput);
+        }
+        if (endInput) {
+            const endAutocomplete = new google.maps.places.Autocomplete(endInput);
+        }
         if (input) {
           const autocomplete = new google.maps.places.Autocomplete(input);
         }
@@ -40,6 +49,19 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 py-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-4 space-y-2">
+          {% for category, message in messages %}
+            <div class="p-4 text-sm rounded-lg 
+                {% if category == 'error' %}bg-red-100 text-red-700
+                {% else %}bg-green-100 text-green-700{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
         {% block content %}{% endblock %}
     </main>
 </body>

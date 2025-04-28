@@ -65,9 +65,22 @@
             {% for log in travel_logs %}
             <tr class="border-b">
                 <td class="p-2">{{ log.date }}</td>
-                <td class="p-2">{{ log.mode }}</td>
-                <td class="p-2">{{ log.miles }}</td>
-                <td class="p-2">{{ log.credits_earned }}</td>
+                <td class="p-2">
+                    {% set mode = log.mode.strip().lower() %}
+                    {% if mode == 'wfh' %}
+                      Work from Home
+                    {% elif mode == 'carpool' %}
+                      Carpool
+                    {% elif mode == 'public_transport' %}
+                      Public Transport
+                    {% elif mode == 'bicycle' %}
+                      Bicycle
+                    {% else %}
+                      {{ mode }}
+                    {% endif %}
+                  </td>
+                  <td class="p-2">{{ log.miles | round(1) }}</td>
+                  <td class="p-2">{{ log.credits_earned | round(1) }}</td>                  
             </tr>
             {% else %}
             <tr>

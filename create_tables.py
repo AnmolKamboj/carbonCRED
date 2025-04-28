@@ -72,9 +72,8 @@ with app.app_context():
 
     # Create travel logs for employee1
     logs = [
-        TravelLog(employee_id=employee1.id, date=datetime(2024, 4, 1), mode="carpool", miles=10, credits_earned=5),
-        TravelLog(employee_id=employee1.id, date=datetime(2024, 4, 2), mode="bike", miles=5, credits_earned=5),
-        TravelLog(employee_id=employee1.id, date=datetime(2024, 4, 3), mode="wfh", miles=0, credits_earned=0)
+        TravelLog(employee_id=employee1.id, date=datetime(2024, 4, 1), mode="carpool", miles=10, credits_earned=20),
+        TravelLog(employee_id=employee1.id, date=datetime(2024, 4, 2), mode="bicycle", miles=5, credits_earned=25)
     ]
     db.session.add_all(logs)
     db.session.commit()
@@ -87,12 +86,12 @@ with app.app_context():
     # Insert Marketplace listings
     listing1 = MarketplaceListing(
         seller_id=employer1.id,
-        credits=500,
+        credits=50,
         price_per_credit=2.5
     )
     listing2 = MarketplaceListing(
         seller_id=employer2.id,
-        credits=300,
+        credits=30,
         price_per_credit=3.0
     )
     db.session.add_all([listing1, listing2])
