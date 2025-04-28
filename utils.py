@@ -3,7 +3,7 @@ import requests
 def calculate_home_work_distance(home_address, work_address):
     print(f"Home Address: {home_address}, Work Address: {work_address}")
 
-    api_key = "AIzaSyDLNCFaxT5w5F2Qb3xMVCEzpi2xK8nYu0I" 
+    api_key = "AIzaSyActKYFWpV-gIVSbeMGzo6IaS6jgP_F_Yw" 
 
     endpoint = "https://maps.googleapis.com/maps/api/distancematrix/json"
     params = {
@@ -17,6 +17,7 @@ def calculate_home_work_distance(home_address, work_address):
         response = requests.get(endpoint, params=params)
         data = response.json()
 
+        print(f"✅ Raw Distance API Response: {data}")
         if data['status'] != 'OK':
             raise Exception('Error fetching distance from Google API')
 
