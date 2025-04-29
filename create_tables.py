@@ -38,7 +38,7 @@ with app.app_context():
         password=generate_password_hash("pass123"),
         role="employer",
         approved=True,
-        total_credits=0
+        total_credits=50
     )
     db.session.add_all([employer1, employer2])
     db.session.commit()

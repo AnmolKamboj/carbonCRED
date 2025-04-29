@@ -166,22 +166,21 @@ def create_app():
             if current_user.role != 'employer':
                 abort(403)
 
-            # Fetch employees under this employer
             employees = User.query.filter_by(role='employee', employer_id=current_user.id, approved=True).all()
 
-            # Calculate total credits
-            earned_credits = 0
+            earned_credits_from_employees = 0
             leaderboard = []
+
             for emp in employees:
                 employee_logs = TravelLog.query.filter_by(employee_id=emp.id).all()
                 emp_credits = sum(log.credits_earned for log in employee_logs)
-                earned_credits += emp_credits
+                earned_credits_from_employees += emp_credits
                 leaderboard.append({'username': emp.username, 'total_credits': emp_credits})
 
-            # Sort leaderboard by highest credits
             leaderboard = sorted(leaderboard, key=lambda x: x['total_credits'], reverse=True)
 
-            total_credits = current_user.total_credits
+            # ✅ Now combine purchased marketplace credits + earned credits
+            total_credits = current_user.total_credits + earned_credits_from_employees
 
             return render_template(
                 'employer/dashboard.html',
@@ -199,19 +198,42 @@ def create_app():
         def marketplace():
             if current_user.role != 'employer':
                 abort(403)
-            
-            listings = MarketplaceListing.query.filter(MarketplaceListing.seller_id != current_user.id).all()
-            listings_with_sellers = []
-            for listing in listings:
-                seller = User.query.get(listing.seller_id)
-                listings_with_sellers.append({
-                    "id": listing.id,
-                    "seller_name": seller.username if seller else "Unknown",
-                    "credits": listing.credits,
-                    "price_per_credit": listing.price_per_credit
-                })
 
-            return render_template('employer/marketplace.html', listings=listings_with_sellers)
+            # ✅ Fetch all listings
+            all_listings = MarketplaceListing.query.all()
+
+            available_listings = []
+            your_listings = []
+
+            seen_sellers = set()
+
+            for listing in all_listings:
+                seller = User.query.get(listing.seller_id)
+
+                if listing.seller_id == current_user.id:
+                    # Your own listings
+                    your_listings.append({
+                        "id": listing.id,
+                        "seller_name": "You",
+                        "credits": listing.credits,
+                        "price_per_credit": listing.price_per_credit
+                    })
+                else:
+                    # Only one listing per seller
+                    if seller and seller.id not in seen_sellers:
+                        available_listings.append({
+                            "id": listing.id,
+                            "seller_name": seller.username,
+                            "credits": listing.credits,
+                            "price_per_credit": listing.price_per_credit
+                        })
+                        seen_sellers.add(seller.id)
+
+            return render_template(
+                'employer/marketplace.html',
+                listings=available_listings,
+                your_listings=your_listings
+            )
 
         @app.route("/purchase_credit", methods=["POST"])
         @login_required
@@ -229,14 +251,25 @@ def create_app():
                 flash(f"Not enough credits available. Only {listing.credits} left.", "error")
                 return redirect(url_for('marketplace'))
 
-            # Update buyer and listing
+            # Fetch Seller
+            seller = User.query.get(listing.seller_id)
+
+            if not seller:
+                flash("Seller not found.", "error")
+                return redirect(url_for('marketplace'))
+
+            # ✅ Adjust credits
             current_user.total_credits += quantity
+            seller.total_credits -= quantity
+
+            # Update listing
             listing.credits -= quantity
 
             if listing.credits == 0:
                 db.session.delete(listing)
 
             db.session.commit()
+
             flash(f"Successfully purchased {quantity} credits!", "success")
             return redirect(url_for('marketplace'))
 
@@ -252,36 +285,24 @@ def create_app():
 
             user = User.query.get(current_user.id)
 
-            print(f"DEBUG: User total_credits = {user.total_credits}, Trying to sell = {credits}")
-
             if user.total_credits < credits:
-                flash("You don't have enough credits to sell.", "error")
+                flash("You don't have enough credits to list for sale.", "error")
                 return redirect(url_for("marketplace"))
 
-            # 🔥 Check if a listing by the same seller with the same price already exists
-            existing_listing = MarketplaceListing.query.filter_by(
+            # 🔥 First delete any old listings by this seller
+            MarketplaceListing.query.filter_by(seller_id=user.id).delete()
+
+            # Now create the new listing
+            new_listing = MarketplaceListing(
                 seller_id=user.id,
+                credits=credits,
                 price_per_credit=price_per_credit
-            ).first()
-
-            if existing_listing:
-                # If it exists, just add the credits
-                existing_listing.credits += credits
-            else:
-                # Else, create a new listing
-                new_listing = MarketplaceListing(
-                    seller_id=user.id,
-                    credits=credits,
-                    price_per_credit=price_per_credit
-                )
-                db.session.add(new_listing)
-
-            user.total_credits -= credits  # Always subtract from seller's total credits
+            )
+            db.session.add(new_listing)
 
             db.session.commit()
             flash("Credits listed for sale successfully!", "success")
             return redirect(url_for("marketplace"))
-
 
 
         #Work address

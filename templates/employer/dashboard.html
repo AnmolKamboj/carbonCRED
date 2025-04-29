@@ -71,7 +71,7 @@
       {% for employee in leaderboard %}
       <tr class="border-b">
         <td class="p-2">{{ employee.username }}</td>
-        <td class="p-2">{{ employee.total_credits }}</td>
+        <td class="p-2">{{ employee.total_credits | round(1) }}</td>
       </tr>
       {% else %}
       <tr>
